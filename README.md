@@ -104,7 +104,8 @@ VITE_API_URL=http://127.0.0.1:8001
 
 ## 📸 Screenshot
 
-> _Add a screenshot of the app here_
+> ![CV Analyzer Screenshot](./assets/cvanalyzer1.jpg)
+> ![CV Analyzer Screenshot](./assets/cvnalayzer2.jpg)
 
 ---
 
