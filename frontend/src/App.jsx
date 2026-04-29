@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8001'
+const API_URL = import.meta.env.VITE_API_URL
 
 export default function App() {
   const [file, setFile] = useState(null)
@@ -17,7 +17,7 @@ export default function App() {
 
     const formData = new FormData()
     formData.append('file', file)
-    formData.append('job_description', jobDescription)
+    formData.append('job_description', jobDescription)  
 
     try {
       const res = await axios.post(`${API_URL}/analyze`, formData)
