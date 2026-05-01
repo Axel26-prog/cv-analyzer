@@ -15,6 +15,9 @@ An AI-powered web application that analyzes your CV/resume and gives you instant
 - **Keyword analysis** — shows found and missing keywords
 - **ATS compatibility check** — know if your CV will pass applicant tracking systems
 - **Section detection** — verifies presence of key CV sections (experience, education, skills, etc.)
+- **User authentication** — register and log in to your account
+- **Analysis history** — view your past CV analyses
+- **Caching** — faster repeated analyses powered by Redis
 
 ---
 
@@ -28,9 +31,12 @@ An AI-powered web application that analyzes your CV/resume and gives you instant
 
 **Backend**
 - [FastAPI](https://fastapi.tiangolo.com/)
+- [PostgreSQL](https://www.postgresql.org/) — database
+- [Redis](https://redis.io/) — caching
+- [SQLAlchemy](https://www.sqlalchemy.org/) — ORM
 - [pdfplumber](https://github.com/jsvine/pdfplumber) — PDF text extraction
 - [python-docx](https://python-docx.readthedocs.io/) — DOCX text extraction
-- [Claude API (Anthropic)](https://www.anthropic.com/) — AI-powered analysis
+- [OpenAI API](https://openai.com/) — AI-powered analysis
 - Deployed on **Railway**
 
 ---
@@ -41,29 +47,44 @@ An AI-powered web application that analyzes your CV/resume and gives you instant
 
 - Node.js 18+
 - Python 3.10+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for local PostgreSQL and Redis)
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/cv-analyzer.git
+git clone https://github.com/Axel26-prog/cv-analyzer.git
 cd cv-analyzer
 ```
 
-### 2. Backend setup
+### 2. Start the database and cache (Docker)
+
+```bash
+docker-compose up -d
+```
+
+This starts PostgreSQL on port `5432` and Redis on port `6379`.
+
+### 3. Backend setup
 
 ```bash
 cd backend
+python -m venv venv
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Mac/Linux
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8001
+uvicorn app.main:app --reload
 ```
 
 Create a `.env` file in the `backend/` folder:
 
 ```env
-ANTHROPIC_API_KEY=your_api_key_here
+OPENAI_API_KEY=your_openai_api_key
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cv_analyzer
+REDIS_URL=redis://localhost:6379
+SECRET_KEY=your_secret_key
 ```
 
-### 3. Frontend setup
+### 4. Frontend setup
 
 ```bash
 cd frontend
@@ -74,7 +95,7 @@ npm run dev
 Create a `.env` file in the `frontend/` folder:
 
 ```env
-VITE_API_URL=http://127.0.0.1:8001
+VITE_API_URL=http://127.0.0.1:8000
 ```
 
 ---
@@ -83,22 +104,25 @@ VITE_API_URL=http://127.0.0.1:8001
 
 ### Frontend → Vercel
 
-1. Push the `frontend/` folder to GitHub
+1. Push the repo to GitHub
 2. Import the project in [Vercel](https://vercel.com)
-3. Set the environment variable:
+3. Set the root directory to `frontend/`
+4. Set the environment variable:
    - `VITE_API_URL` → `https://your-backend.railway.app`
-4. Deploy
+5. Deploy
 
 ### Backend → Railway
 
-1. Push the `backend/` folder to GitHub
-2. Create a new project in [Railway](https://railway.app)
-3. Set the environment variable:
-   - `ANTHROPIC_API_KEY` → your Anthropic API key
+1. Create a new project in [Railway](https://railway.app)
+2. Add a PostgreSQL and Redis service
+3. Set the environment variables:
+   - `OPENAI_API_KEY` → your OpenAI API key
+   - `DATABASE_URL` → your Railway PostgreSQL URL
+   - `REDIS_URL` → your Railway Redis URL
+   - `SECRET_KEY` → a random secret string
 4. Deploy
 
 > ⚠️ Make sure your backend has CORS configured to allow requests from your Vercel domain.
-
 
 ---
 
@@ -106,6 +130,7 @@ VITE_API_URL=http://127.0.0.1:8001
 
 ![CV Analyzer Screenshot](cvanalyzer2.jpg)
 ![CV Analyzer Screenshot](cvnanalyzer1.jpg)
+
 ---
 
 ## 📝 License
