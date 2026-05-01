@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import axios from 'axios'
-
-const API_URL = import.meta.env.VITE_API_URL
+import { useState, useEffect } from 'react'
+import { analyzeCV, logout } from './api'
+import AuthForm from './AuthForm'
 
 export default function App() {
+  const [authed, setAuthed] = useState(!!localStorage.getItem('token'))
   const [file, setFile] = useState(null)
   const [jobDescription, setJobDescription] = useState('')
   const [analysis, setAnalysis] = useState(null)
@@ -14,29 +14,41 @@ export default function App() {
     if (!file) return
     setLoading(true)
     setError(null)
-
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('job_description', jobDescription)  
-
     try {
-      const res = await axios.post(`${API_URL}/analyze`, formData)
-      setAnalysis(res.data.analysis)
+      const res = await analyzeCV(file, jobDescription)
+      setAnalysis(res.data.result)
     } catch (err) {
+      if (err.response?.status === 401) {
+        logout()
+        setAuthed(false)
+      }
       setError(err.response?.data?.detail || 'Something went wrong')
     } finally {
       setLoading(false)
     }
   }
 
+  const handleLogout = () => {
+    logout()
+    setAuthed(false)
+    setAnalysis(null)
+  }
+
+  if (!authed) return <AuthForm onAuth={() => setAuthed(true)} />
+
   return (
     <div className="min-h-screen bg-gray-950 text-white p-8">
       <div className="max-w-2xl mx-auto">
 
         {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-4xl font-bold text-white">CV Analyzer</h1>
-          <p className="text-gray-400 mt-2">Upload your CV and get instant AI-powered feedback</p>
+        <div className="mb-10 flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold text-white">CV Analyzer</h1>
+            <p className="text-gray-400 mt-2">Upload your CV and get instant AI-powered feedback</p>
+          </div>
+          <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+            Sign out
+          </button>
         </div>
 
         {/* Upload */}
@@ -82,8 +94,6 @@ export default function App() {
         {/* Results */}
         {analysis && (
           <div className="mt-8 space-y-4">
-
-            {/* Score */}
             <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800 text-center">
               <p className="text-gray-400 text-sm mb-1">Overall Score</p>
               <p className={`text-6xl font-bold ${analysis.score >= 75 ? 'text-green-400' : analysis.score >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
@@ -92,21 +102,17 @@ export default function App() {
               <p className="text-gray-500 text-sm mt-1">out of 100</p>
             </div>
 
-            {/* Summary */}
             <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
               <h2 className="text-sm text-gray-400 mb-2">Summary</h2>
               <p className="text-gray-200 text-sm leading-relaxed">{analysis.summary}</p>
             </div>
 
-            {/* Strengths & Improvements */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
                 <h2 className="text-sm text-green-400 mb-3">Strengths</h2>
                 <ul className="space-y-2">
                   {analysis.strengths.map((s, i) => (
-                    <li key={i} className="text-gray-300 text-sm flex gap-2">
-                      <span className="text-green-500">✓</span>{s}
-                    </li>
+                    <li key={i} className="text-gray-300 text-sm flex gap-2"><span className="text-green-500">✓</span>{s}</li>
                   ))}
                 </ul>
               </div>
@@ -114,15 +120,12 @@ export default function App() {
                 <h2 className="text-sm text-yellow-400 mb-3">Improvements</h2>
                 <ul className="space-y-2">
                   {analysis.improvements.map((s, i) => (
-                    <li key={i} className="text-gray-300 text-sm flex gap-2">
-                      <span className="text-yellow-500">→</span>{s}
-                    </li>
+                    <li key={i} className="text-gray-300 text-sm flex gap-2"><span className="text-yellow-500">→</span>{s}</li>
                   ))}
                 </ul>
               </div>
             </div>
 
-            {/* Keywords */}
             <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
               <h2 className="text-sm text-gray-400 mb-3">Keywords</h2>
               <div className="flex flex-wrap gap-2 mb-3">
@@ -137,7 +140,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* ATS + Sections */}
             <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
               <h2 className="text-sm text-gray-400 mb-3">ATS & Sections</h2>
               <p className={`text-sm mb-3 ${analysis.ats_friendly ? 'text-green-400' : 'text-red-400'}`}>
@@ -151,7 +153,6 @@ export default function App() {
                 ))}
               </div>
             </div>
-
           </div>
         )}
       </div>
