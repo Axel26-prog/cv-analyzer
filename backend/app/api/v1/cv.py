@@ -1,5 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
 from sqlalchemy.orm import Session
+from loguru import logger
+import sentry_sdk
 from app.services.cv_service import extract_text, analyze_cv
 from app.repositories import cv_repo
 from app.schemas.cv import CVAnalysisOut
@@ -16,19 +18,28 @@ async def analyze(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    logger.info(f"User {current_user.id} analyzing file: {file.filename}")
+
     if not file.filename.endswith((".pdf", ".docx")):
         raise HTTPException(status_code=400, detail="Solo PDF o DOCX")
+
     file_bytes = await file.read()
     if len(file_bytes) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Máximo 5MB")
+
     try:
         text = extract_text(file_bytes, file.filename)
         result = analyze_cv(text, job_description)
     except Exception as e:
+        logger.error(f"Error analyzing CV for user {current_user.id}: {e}")
+        sentry_sdk.capture_exception(e)
         raise HTTPException(status_code=500, detail=str(e))
+
     saved = cv_repo.create(db, current_user.id, file.filename, text, job_description, result)
+    logger.info(f"CV analysis saved for user {current_user.id}, score: {result.get('score')}")
     return saved
 
 @router.get("/history", response_model=list[CVAnalysisOut])
 def history(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    logger.info(f"User {current_user.id} fetching history")
     return cv_repo.get_by_user(db, current_user.id)
