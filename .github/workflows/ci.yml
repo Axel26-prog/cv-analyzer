@@ -57,7 +57,18 @@ jobs:
           REDIS_URL: redis://localhost:6379
           SECRET_KEY: ci-secret-key
           OPENAI_API_KEY: sk-fake-key-for-ci
+          SENTRY_DSN: ""
         run: python -c "from app.main import app; print('Backend OK')"
+
+      - name: Run tests
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cv_analyzer
+          REDIS_URL: redis://localhost:6379
+          SECRET_KEY: ci-secret-key
+          OPENAI_API_KEY: sk-fake-key-for-ci
+          SENTRY_DSN: ""
+        run: pytest tests/ -v
 
   frontend:
     name: Frontend checks
