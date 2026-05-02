@@ -62,7 +62,7 @@ Upload your CV (PDF or DOCX), optionally paste a job description, and get instan
 | Cache | Redis 7 |
 | File parsing | pdfplumber, python-docx |
 | Monitoring | Sentry SDK, loguru |
-| Migrations | Alembic |
+| Testing | pytest |
 | Infrastructure | Docker, docker-compose |
 | CI/CD | GitHub Actions → Vercel (frontend) + Railway (backend) |
 
@@ -110,12 +110,13 @@ REDIS_URL=redis://localhost:6379
 SECRET_KEY=your_secret_key_here
 ```
 
-Run database migrations and start the server:
+Start the server:
 
 ```bash
-alembic upgrade head
 uvicorn app.main:app --reload
 ```
+
+Tables are created automatically on startup.
 
 ### 4. Frontend
 
@@ -156,6 +157,7 @@ Every push to `main` triggers automatic deploys on both platforms.
 | `DATABASE_URL` | Provided by Railway PostgreSQL |
 | `REDIS_URL` | Provided by Railway Redis |
 | `SECRET_KEY` | A random secret string |
+| `SENTRY_DSN` | Your Sentry DSN |
 
 3. Railway deploys automatically on every push to `main`
 
@@ -173,7 +175,8 @@ push to main / feat/** / PR
            ├── Backend checks (Python 3.11)
            │   ├── Spin up PostgreSQL 16 + Redis 7
            │   ├── Install dependencies
-           │   └── Verify app imports successfully
+           │   ├── Verify app imports successfully
+           │   └── Run pytest tests
            │
            └── Frontend checks (Node 20)
                ├── Install dependencies
@@ -197,14 +200,13 @@ cv-analyzer/
 │   │   ├── repositories/      # Data access layer
 │   │   ├── schemas/           # Pydantic schemas
 │   │   └── services/          # Business logic, OpenAI integration
-│   ├── alembic/               # Database migrations
+│   ├── tests/                 # pytest test suite
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── assets/            # Static assets
 │   │   ├── api.js             # Axios API calls
-│   │   ├── App.jsx            # Root component + routing
+│   │   ├── App.jsx            # Root component
 │   │   ├── AuthForm.jsx       # Login / register
 │   │   └── History.jsx        # Analysis history view
 │   ├── Dockerfile
