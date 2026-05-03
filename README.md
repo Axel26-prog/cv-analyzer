@@ -5,10 +5,20 @@
 [![CI](https://github.com/Axel26-prog/cv-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/Axel26-prog/cv-analyzer/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://cv-analyzer-mocha.vercel.app)
+[![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)](https://github.com/Axel26-prog/cv-analyzer)
 
 **[Live Demo](https://cv-analyzer-mocha.vercel.app)** · [Report a Bug](https://github.com/Axel26-prog/cv-analyzer/issues) · [Request a Feature](https://github.com/Axel26-prog/cv-analyzer/issues)
 
-![CV Analyzer Screenshot](cvanalyzer2.jpg)
+---
+
+## Try it out
+
+A test account is available — no registration needed:
+
+| Field    | Value                  |
+|----------|------------------------|
+| Email    | `demo@cvanalyzer.com`  |
+| Password | `Demo1234`             |
 
 ---
 
@@ -17,9 +27,9 @@
 Upload your CV (PDF or DOCX), optionally paste a job description, and get instant structured feedback:
 
 - **ATS compatibility check** — know if your resume will pass applicant tracking systems
-- **Overall score** out of 100 with breakdown by section
+- **Overall score** out of 100 with visual radar chart breakdown
 - **Keyword analysis** — found vs. missing keywords for the target role
-- **Strengths & improvements** — actionable, specific feedback
+- **Strengths & improvements** — actionable, specific feedback from GPT-4o-mini
 - **Section detection** — flags missing sections (experience, education, skills, etc.)
 - **Job match score** — tailored analysis when a job description is provided
 - **Analysis history** — authenticated users can review all past analyses with full detail
@@ -29,75 +39,99 @@ Upload your CV (PDF or DOCX), optionally paste a job description, and get instan
 ## Architecture
 
 ```
-┌─────────────────┐        ┌──────────────────────────────────────┐
-│   React + Vite  │  HTTP  │           FastAPI backend            │
-│   Tailwind CSS  │ ──────▶│                                      │
-│   Vercel        │        │  ┌──────────┐   ┌─────────────────┐ │
-└─────────────────┘        │  │ Auth     │   │ CV Analysis     │ │
-                           │  │ JWT      │   │ OpenAI API      │ │
-                           │  │ bcrypt   │   └────────┬────────┘ │
-                           │  └──────────┘            │           │
-                           │                          │           │
-                           │  ┌──────────┐   ┌────────▼────────┐ │
-                           │  │PostgreSQL│   │ Redis Cache     │ │
-                           │  │SQLAlchemy│   │ (SHA-256 hash)  │ │
-                           │  └──────────┘   └─────────────────┘ │
-                           │  Railway                             │
-                           └──────────────────────────────────────┘
+┌─────────────────────┐          ┌────────────────────────────────────────────────┐
+│                     │          │              FastAPI Backend                   │
+│   React 18 + Vite   │  HTTPS   │                                                │
+│   Tailwind CSS      │ ───────► │  ┌─────────────────┐   ┌────────────────────┐ │
+│   Recharts          │          │  │   Auth Service  │   │   CV Analysis      │ │
+│                     │          │  │   JWT / bcrypt  │   │   OpenAI API       │ │
+│   ▲ Vercel          │          │  │   OAuth2Bearer  │   │   pdfplumber       │ │
+└─────────────────────┘          │  └─────────────────┘   └─────────┬──────────┘ │
+                                 │                                   │            │
+                                 │  ┌────────────────────────────────▼──────────┐ │
+                                 │  │         Repository Pattern                │ │
+                                 │  │         user_repo · cv_repo               │ │
+                                 │  └───────────┬───────────────────┬───────────┘ │
+                                 │              │                   │            │
+                                 │  ┌───────────▼──────┐  ┌────────▼──────────┐ │
+                                 │  │  PostgreSQL 16   │  │    Redis 7        │ │
+                                 │  │  SQLAlchemy 2.0  │  │  SHA-256 cache    │ │
+                                 │  │  users           │  │  24h TTL          │ │
+                                 │  │  cv_analyses     │  │                   │ │
+                                 │  └──────────────────┘  └───────────────────┘ │
+                                 │  ▲ Railway                                    │
+                                 └────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────────────────────────┐
+  │  🐳  Docker + docker-compose  —  full stack with a single command           │
+  │      backend · frontend · postgres · redis · healthchecks                   │
+  └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**How caching works:** each uploaded CV is hashed (SHA-256). Before calling the OpenAI API, the backend checks Redis for an existing result with that hash + job description. Cache hit = instant response, no API cost.
+### How caching works
+
+```
+  Upload CV          SHA-256 Hash          Redis Lookup
+  (PDF/DOCX)   ───►  text + job desc  ───►  check cache ──► HIT  ───► Return instantly (no API cost)
+                                                         │
+                                                         └──► MISS ──► Call OpenAI ──► Store + Return
+```
 
 ---
 
-## Tech stack
+## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 18, Vite, Tailwind CSS, Axios |
-| Backend | FastAPI, Python 3.11, SQLAlchemy 2.0 |
-| Auth | JWT (python-jose), passlib + bcrypt |
-| AI | OpenAI API |
-| Database | PostgreSQL 16 |
-| Cache | Redis 7 |
-| File parsing | pdfplumber, python-docx |
-| Monitoring | Sentry SDK, loguru |
-| Testing | pytest |
-| Infrastructure | Docker, docker-compose |
-| CI/CD | GitHub Actions → Vercel (frontend) + Railway (backend) |
+| Layer          | Technology                                          |
+|----------------|-----------------------------------------------------|
+| Frontend       | React 18, Vite, Tailwind CSS, Axios, Recharts       |
+| Backend        | FastAPI, Python 3.11, SQLAlchemy 2.0                |
+| Auth           | JWT (python-jose), passlib + bcrypt                 |
+| AI             | OpenAI API (gpt-4o-mini)                            |
+| Database       | PostgreSQL 16                                       |
+| Cache          | Redis 7                                             |
+| File parsing   | pdfplumber, python-docx                             |
+| Monitoring     | Sentry SDK, loguru                                  |
+| Testing        | pytest (92% coverage)                               |
+| Infrastructure | Docker, docker-compose                              |
+| CI/CD          | GitHub Actions → Vercel (frontend) + Railway (backend) |
 
 ---
 
-## Getting started
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 20+
-- Python 3.11+
-- Docker Desktop (for local PostgreSQL and Redis)
+- Docker Desktop
 
-### 1. Clone
+### Full stack in one command
 
 ```bash
 git clone https://github.com/Axel26-prog/cv-analyzer.git
 cd cv-analyzer
+docker compose up --build
 ```
 
-### 2. Start infrastructure
+| Service  | URL                          |
+|----------|------------------------------|
+| Frontend | http://localhost:3000        |
+| Backend  | http://localhost:8080        |
+| API Docs | http://localhost:8080/docs   |
+
+### Local development (without Docker)
+
+**1. Start only infrastructure:**
 
 ```bash
-docker-compose up -d
+docker compose up postgres redis -d
 ```
 
-Starts PostgreSQL 16 on `5432` and Redis 7 on `6379`.
-
-### 3. Backend
+**2. Backend:**
 
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate        # Mac/Linux
-# venv\Scripts\activate         # Windows
+source venv/bin/activate     # Mac/Linux
+venv\Scripts\activate        # Windows
 pip install -r requirements.txt
 ```
 
@@ -108,42 +142,82 @@ OPENAI_API_KEY=your_openai_api_key
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cv_analyzer
 REDIS_URL=redis://localhost:6379
 SECRET_KEY=your_secret_key_here
+SENTRY_DSN=your_sentry_dsn        # optional
 ```
-
-Start the server:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-Tables are created automatically on startup.
-
-### 4. Frontend
+**3. Frontend:**
 
 ```bash
 cd frontend
 npm install
-npm run dev
 ```
 
-Create `frontend/.env`:
+Create `frontend/.env.local`:
 
 ```env
-VITE_API_URL=http://127.0.0.1:8000
+VITE_API_URL=http://localhost:8080/api/v1
+```
+
+```bash
+npm run dev
 ```
 
 App runs at `http://localhost:5173`.
 
 ---
 
-## Deployment
+## Running Tests
 
-Every push to `main` triggers automatic deploys on both platforms.
+```bash
+cd backend
+pytest tests/ -v --cov=app --cov-report=term-missing
+```
+
+```
+Name                            Stmts   Cover
+---------------------------------------------
+app/api/v1/auth.py                 29   100%
+app/api/v1/cv.py                   33    85%
+app/services/cv_service.py         31   100%
+app/services/auth_service.py       13   100%
+app/repositories/user_repo.py      12   100%
+app/repositories/cv_repo.py        10   100%
+---------------------------------------------
+TOTAL                             275    92%
+```
+
+---
+
+## CI Pipeline
+
+```
+push to main / feat/** / pull request
+             │
+             ├── Backend checks (Python 3.11)
+             │       ├── Spin up PostgreSQL 16 + Redis 7
+             │       ├── pip install -r requirements.txt
+             │       └── pytest tests/ --cov=app  (92% coverage)
+             │
+             └── Frontend checks (Node 20)
+                     ├── npm install
+                     └── npm run build
+             │
+             ├── ✅ pass → auto deploy to Railway (backend)
+             └── ✅ pass → auto deploy to Vercel  (frontend)
+```
+
+---
+
+## Deployment
 
 ### Frontend → Vercel
 
 1. Import the repo in [Vercel](https://vercel.com), set root directory to `frontend/`
-2. Add environment variable: `VITE_API_URL` → your Railway backend URL
+2. Add environment variable: `VITE_API_URL` → your Railway backend URL + `/api/v1`
 3. Vercel deploys automatically on every push to `main`
 
 ### Backend → Railway
@@ -151,64 +225,42 @@ Every push to `main` triggers automatic deploys on both platforms.
 1. Create a project in [Railway](https://railway.app), add PostgreSQL and Redis services
 2. Add environment variables:
 
-| Variable | Value |
-|---|---|
-| `OPENAI_API_KEY` | Your OpenAI API key |
-| `DATABASE_URL` | Provided by Railway PostgreSQL |
-| `REDIS_URL` | Provided by Railway Redis |
-| `SECRET_KEY` | A random secret string |
-| `SENTRY_DSN` | Your Sentry DSN |
+| Variable        | Value                            |
+|-----------------|----------------------------------|
+| `OPENAI_API_KEY`| Your OpenAI API key              |
+| `DATABASE_URL`  | Provided by Railway PostgreSQL   |
+| `REDIS_URL`     | Provided by Railway Redis        |
+| `SECRET_KEY`    | A random secret string           |
+| `SENTRY_DSN`    | Your Sentry DSN (optional)       |
 
 3. Railway deploys automatically on every push to `main`
 
-> Make sure your backend's CORS settings include your Vercel domain.
-
 ---
 
-## CI pipeline
-
-Runs on every push to `main` and `feat/**` branches, and on pull requests to `main`.
-
-```
-push to main / feat/** / PR
-           │
-           ├── Backend checks (Python 3.11)
-           │   ├── Spin up PostgreSQL 16 + Redis 7
-           │   ├── Install dependencies
-           │   ├── Verify app imports successfully
-           │   └── Run pytest tests
-           │
-           └── Frontend checks (Node 20)
-               ├── Install dependencies
-               └── Production build (npm run build)
-```
-
----
-
-## Project structure
+## Project Structure
 
 ```
 cv-analyzer/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py            # FastAPI app entry point
-│   │   ├── api/
-│   │   │   └── v1/            # API routes (versioned)
-│   │   ├── core/              # Config, security, JWT
-│   │   ├── db/                # Database session, connection
-│   │   ├── models/            # SQLAlchemy models
-│   │   ├── repositories/      # Data access layer
-│   │   ├── schemas/           # Pydantic schemas
-│   │   └── services/          # Business logic, OpenAI integration
-│   ├── tests/                 # pytest test suite
+│   │   ├── main.py                 # FastAPI entry point
+│   │   ├── api/v1/                 # Versioned API routes
+│   │   ├── core/                   # Config, security, JWT
+│   │   ├── db/                     # Database session
+│   │   ├── models/                 # SQLAlchemy models
+│   │   ├── repositories/           # Data access layer
+│   │   ├── schemas/                # Pydantic schemas
+│   │   └── services/               # Business logic, OpenAI
+│   ├── tests/                      # pytest (92% coverage)
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── api.js             # Axios API calls
-│   │   ├── App.jsx            # Root component
-│   │   ├── AuthForm.jsx       # Login / register
-│   │   └── History.jsx        # Analysis history view
+│   │   ├── api.js                  # Axios API calls
+│   │   ├── App.jsx                 # Root component
+│   │   ├── AuthForm.jsx            # Login / register
+│   │   ├── AnalysisResults.jsx     # Score, radar chart, keywords
+│   │   └── History.jsx             # Analysis history view
 │   ├── Dockerfile
 │   └── package.json
 ├── docker-compose.yml
