@@ -1,6 +1,7 @@
 from .exceptions import EmptyCVError, InvalidResponseError
 from .prompt_builder import build_cv_analysis_prompt, load_template
 from .llm_client import call_openai
+from .parser import parse_and_validate_dict
 
 def analyze(cv_text: str, job_description: str = "") -> dict:
     if not cv_text or not cv_text.strip():
