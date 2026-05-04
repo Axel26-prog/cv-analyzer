@@ -6,17 +6,31 @@ from fastapi.testclient import TestClient
 MOCK_ANALYSIS = {
     "score": 85,
     "summary": "Experienced developer with strong Python skills.",
-    "strengths": ["Python", "FastAPI", "PostgreSQL"],
-    "improvements": ["Add more projects", "Improve LinkedIn"],
-    "keywords_found": ["Python", "FastAPI"],
-    "keywords_missing": ["Docker", "AWS"],
+    "strengths": ["Python", "FastAPI", "PostgreSQL", "Clean code"],
+    "improvements": ["Add more projects", "Improve LinkedIn", "Add certifications"],
+    "keywords_found": ["Python", "FastAPI", "PostgreSQL"],
+    "keywords_missing": ["Docker", "AWS", "Kubernetes"],
     "ats_friendly": True,
     "sections": {
         "experience": True,
         "education": True,
         "skills": True,
         "contact": True
-    }
+    },
+    "seniority_level": "Mid",
+    "years_experience": 5,
+    "tech_stack": ["Python", "FastAPI", "PostgreSQL"],
+    "employment_gaps": [],
+    "score_breakdown": {
+        "format_score": 85,
+        "content_score": 85,
+        "relevance_score": 80,
+        "ats_score": 90
+    },
+    "recommendations": [
+        {"priority": "high", "action": "Add Docker experience"},
+        {"priority": "medium", "action": "Improve LinkedIn profile"}
+    ]
 }
 
 def get_auth_token(client):
@@ -75,13 +89,11 @@ def test_analyze_cv_returns_expected_fields():
 
     with patch("app.services.cv_service.get_cached", return_value=None), \
          patch("app.services.cv_service.set_cached"), \
-         patch("app.services.cv_service.client") as mock_client:
+         patch("app.services.analyzer.orchestrator.call_openai") as mock_call:
 
-        mock_response = MagicMock()
-        mock_response.choices[0].message.content = json.dumps(MOCK_ANALYSIS)
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_call.return_value = json.dumps(MOCK_ANALYSIS)
 
-        result = analyze_cv("John Doe Software Engineer Python FastAPI")
+        result = analyze_cv("John Doe Software Engineer Python FastAPI PostgreSQL Docker kubernetes cloud computing experience")
         assert result["score"] == 85
         assert "strengths" in result
         assert "improvements" in result
@@ -93,11 +105,11 @@ def test_analyze_cv_uses_cache():
     from app.services.cv_service import analyze_cv
 
     with patch("app.services.cv_service.get_cached", return_value=MOCK_ANALYSIS) as mock_cache, \
-         patch("app.services.cv_service.client") as mock_client:
+         patch("app.services.analyzer.orchestrator.call_openai") as mock_call:
 
         result = analyze_cv("some cv text")
         assert result["score"] == 85
-        mock_client.chat.completions.create.assert_not_called()
+        mock_call.assert_not_called()
 
 
 # --- Tests del endpoint /cv/analyze ---
