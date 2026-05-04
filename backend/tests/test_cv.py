@@ -89,7 +89,7 @@ def test_analyze_cv_returns_expected_fields():
 
     with patch("app.services.cv_service.get_cached", return_value=None), \
          patch("app.services.cv_service.set_cached"), \
-         patch("app.services.analyzer.llm_client.call_openai") as mock_call:
+         patch("app.services.analyzer.orchestrator.call_openai") as mock_call:
 
         mock_call.return_value = json.dumps(MOCK_ANALYSIS)
 
@@ -105,7 +105,7 @@ def test_analyze_cv_uses_cache():
     from app.services.cv_service import analyze_cv
 
     with patch("app.services.cv_service.get_cached", return_value=MOCK_ANALYSIS) as mock_cache, \
-         patch("app.services.analyzer.llm_client.call_openai") as mock_call:
+         patch("app.services.analyzer.orchestrator.call_openai") as mock_call:
 
         result = analyze_cv("some cv text")
         assert result["score"] == 85
