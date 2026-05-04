@@ -93,7 +93,7 @@ def test_analyze_cv_returns_expected_fields():
 
         mock_call.return_value = json.dumps(MOCK_ANALYSIS)
 
-        result = analyze_cv("John Doe Software Engineer Python FastAPI")
+        result = analyze_cv("John Doe Software Engineer Python FastAPI PostgreSQL Docker kubernetes cloud computing experience")
         assert result["score"] == 85
         assert "strengths" in result
         assert "improvements" in result
