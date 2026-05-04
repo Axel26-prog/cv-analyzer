@@ -5,7 +5,7 @@
 [![CI](https://github.com/Axel26-prog/cv-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/Axel26-prog/cv-analyzer/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://cv-analyzer-mocha.vercel.app)
-[![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)](https://github.com/Axel26-prog/cv-analyzer)
+[![Coverage](https://img.shields.io/badge/coverage-88%25-brightgreen)](https://github.com/Axel26-prog/cv-analyzer)
 
 **[Live Demo](https://cv-analyzer-mocha.vercel.app)** · [Report a Bug](https://github.com/Axel26-prog/cv-analyzer/issues) · [Request a Feature](https://github.com/Axel26-prog/cv-analyzer/issues)
 
@@ -27,7 +27,7 @@ A test account is available — no registration needed:
 Upload your CV (PDF or DOCX), optionally paste a job description, and get instant structured feedback:
 
 - **ATS compatibility check** — know if your resume will pass applicant tracking systems
-- **Overall score** out of 100 with visual radar chart breakdown
+- **Overall score** out of 100 with visual radar chart breakdown (Format, Content, Relevance, ATS)
 - **Keyword analysis** — found vs. missing keywords for the target role
 - **Strengths & improvements** — actionable, specific feedback from GPT-4o-mini
 - **Section detection** — flags missing sections (experience, education, skills, etc.)
@@ -91,7 +91,7 @@ Upload your CV (PDF or DOCX), optionally paste a job description, and get instan
 | Cache          | Redis 7                                             |
 | File parsing   | pdfplumber, python-docx                             |
 | Monitoring     | Sentry SDK, loguru                                  |
-| Testing        | pytest (92% coverage)                               |
+| Testing        | pytest (88% coverage)                              |
 | Infrastructure | Docker, docker-compose                              |
 | CI/CD          | GitHub Actions → Vercel (frontend) + Railway (backend) |
 
@@ -182,12 +182,23 @@ Name                            Stmts   Cover
 ---------------------------------------------
 app/api/v1/auth.py                 29   100%
 app/api/v1/cv.py                   33    85%
-app/services/cv_service.py         31   100%
-app/services/auth_service.py       13   100%
-app/repositories/user_repo.py      12   100%
-app/repositories/cv_repo.py        10   100%
+app/api/v1/deps.py                 19    84%
+app/core/config.py                13   100%
+app/core/security.py              16   100%
+app/db/session.py                  6    33%
+app/main.py                       22    82%
+app/models/cv.py                  11   100%
+app/models/user.py                 8   100%
+app/repositories/cv_repo.py       10   100%
+app/repositories/user_repo.py     12   100%
+app/schemas/cv.py                 10   100%
+app/schemas/user.py               15   100%
+app/services/analyzer/            119    74%
+app/services/auth_service.py      13   100%
+app/services/cache_service.py     16    56%
+app/services/cv_service.py        26   100%
 ---------------------------------------------
-TOTAL                             275    92%
+TOTAL                             389    88%
 ```
 
 ---
@@ -200,7 +211,7 @@ push to main / feat/** / pull request
              ├── Backend checks (Python 3.11)
              │       ├── Spin up PostgreSQL 16 + Redis 7
              │       ├── pip install -r requirements.txt
-             │       └── pytest tests/ --cov=app  (92% coverage)
+             │       └── pytest tests/ --cov=app  (88% coverage)
              │
              └── Frontend checks (Node 20)
                      ├── npm install
@@ -250,8 +261,20 @@ cv-analyzer/
 │   │   ├── models/                 # SQLAlchemy models
 │   │   ├── repositories/           # Data access layer
 │   │   ├── schemas/                # Pydantic schemas
-│   │   └── services/               # Business logic, OpenAI
-│   ├── tests/                      # pytest (92% coverage)
+│   │   └── services/
+│   │       ├── analyzer/           # AI analysis module
+│   │       │   ├── __init__.py     # Public interface
+│   │       │   ├── orchestrator.py # Flow coordination
+│   │       │   ├── parser.py       # Pydantic validation
+│   │       │   ├── llm_client.py   # OpenAI API calls + retry
+│   │       │   ├── models.py       # CVAnalysis, ScoreBreakdown
+│   │       │   ├── prompt_builder.py
+│   │       │   └── exceptions.py
+│   │       ├── prompts/            # Prompt templates (.txt)
+│   │       ├── auth_service.py
+│   │       ├── cv_service.py       # CV extraction + caching
+│   │       └── cache_service.py
+│   ├── tests/                      # pytest (88% coverage)
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── frontend/
