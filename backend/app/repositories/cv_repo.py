@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.cv import CVAnalysis
 
-def create(db: Session, user_id: int, filename: str, cv_text: str, job_description: str, result: dict) -> CVAnalysis:
+def create(db: Session, user_id: int, filename: str, job_description: str, result: dict, cv_text: str | None = None) -> CVAnalysis:
     analysis = CVAnalysis(
         user_id=user_id,
         filename=filename,

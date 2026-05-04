@@ -35,7 +35,7 @@ async def analyze(
         sentry_sdk.capture_exception(e)
         raise HTTPException(status_code=500, detail=str(e))
 
-    saved = cv_repo.create(db, current_user.id, file.filename, text, job_description, result)
+    saved = cv_repo.create(db, current_user.id, file.filename, job_description, result)
     logger.info(f"CV analysis saved for user {current_user.id}, score: {result.get('score')}")
     return saved
 
