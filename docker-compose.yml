@@ -4,9 +4,9 @@ services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: cv_analyzer
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-cv_analyzer}
     ports:
       - "5432:5432"
     volumes:
@@ -32,7 +32,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cv_analyzer
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cv_analyzer}
       REDIS_URL: redis://redis:6379
       SECRET_KEY: ${SECRET_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}

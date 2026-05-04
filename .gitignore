@@ -21,4 +21,10 @@ Thumbs.db
 # Node
 node_modules/
 
+# Frontend
 frontend/.env.local
+frontend/.env
+
+# Backend
+backend/.env
+backend/test.db
