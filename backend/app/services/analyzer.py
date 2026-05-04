@@ -20,7 +20,7 @@ class APIError(CVAnalysisError):
 class InvalidResponseError(CVAnalysisError):
     pass
 
-REQUIRED_FIELDS = ["score", "summary", "strengths", "improvements", "keywords_found", "keywords_missing", "ats_friendly", "sections"]
+REQUIRED_FIELDS = ["score", "summary", "strengths", "improvements", "keywords_found", "keywords_missing", "ats_friendly", "sections", "seniority_level", "years_experience", "tech_stack", "employment_gaps", "score_breakdown", "recommendations"]
 REQUIRED_SECTIONS = ["experience", "education", "skills", "contact"]
 
 def analyze_cv(cv_text: str, job_description: str = "") -> dict:
@@ -36,23 +36,44 @@ def analyze_cv(cv_text: str, job_description: str = "") -> dict:
     {{
       "score": <number 0-100>,
       "summary": "<2-3 sentence professional summary of the candidate>",
-      "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
-      "improvements": ["<improvement 1>", "<improvement 2>", "<improvement 3>"],
-      "keywords_found": ["<keyword 1>", "<keyword 2>"],
-      "keywords_missing": ["<keyword 1>", "<keyword 2>"],
+      "strengths": ["<strength 1>", "<strength 2>", "<strength 3>", "<strength 4>"],
+      "improvements": ["<improvement 1>", "<improvement 2>", "<improvement 3>", "<improvement 4>"],
+      "keywords_found": ["<keyword 1>", "<keyword 2>", "<keyword 3>"],
+      "keywords_missing": ["<keyword 1>", "<keyword 2>", "<keyword 3>"],
       "ats_friendly": <true or false>,
       "sections": {{
         "experience": <true or false>,
         "education": <true or false>,
         "skills": <true or false>,
         "contact": <true or false>
-      }}
+      }},
+      "seniority_level": "<Junior | Mid | Senior | Lead | Executive>",
+      "years_experience": <estimated years based on CV>,
+      "tech_stack": ["<technology 1>", "<technology 2>", "<technology 3>"],
+      "employment_gaps": ["<gap 1 with dates if detectable>", "<gap 2 if detectable>"],
+      "score_breakdown": {{
+        "format_score": <0-100, how well formatted the CV is>,
+        "content_score": <0-100, quality of content>,
+        "relevance_score": <0-100, relevance to job description if provided>,
+        "ats_score": <0-100, ATS friendliness>
+      }},
+      "recommendations": [
+        {{"priority": "high", "action": "<specific action to take>"}},
+        {{"priority": "medium", "action": "<specific action to take>"}},
+        {{"priority": "low", "action": "<specific action to take>"}}
+      ]
     }}
 
-    CV Content:
-    {cv_text[:3000]}
+    Evaluate the CV considering:
+    - Structure and formatting (20% of total score)
+    - Content quality and completeness (30% of total score)
+    - Relevance to job description if provided (30% of total score)
+    - ATS friendliness and keyword optimization (20% of total score)
 
-    {"Job Description: " + job_description if job_description else "No job description provided."}
+    CV Content:
+    {cv_text[:4000]}
+
+    {"Job Description: " + job_description if job_description else "No job description provided. If provided, analyze alignment between CV and job requirements, identify missing critical skills, and score relevance accordingly."}
     """
 
     try:
@@ -89,5 +110,12 @@ def analyze_cv(cv_text: str, job_description: str = "") -> dict:
 
     if not isinstance(result.get("score"), (int, float)) or not 0 <= result["score"] <= 100:
         raise InvalidResponseError("Score must be a number between 0 and 100")
+
+    if "score_breakdown" in result and isinstance(result["score_breakdown"], dict):
+        for key in ["format_score", "content_score", "relevance_score", "ats_score"]:
+            if key in result["score_breakdown"]:
+                val = result["score_breakdown"][key]
+                if not isinstance(val, (int, float)) or not 0 <= val <= 100:
+                    raise InvalidResponseError(f"{key} must be a number between 0 and 100")
 
     return result
