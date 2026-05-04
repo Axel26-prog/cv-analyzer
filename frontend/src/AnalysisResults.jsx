@@ -2,11 +2,11 @@ import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tool
 
 export default function AnalysisResults({ analysis }) {
   const radarData = [
-    { subject: 'Score', value: analysis.score },
-    { subject: 'Strengths', value: analysis.strengths.length * 33 },
-    { subject: 'Keywords', value: Math.min(analysis.keywords_found.length * 20, 100) },
-    { subject: 'Sections', value: Object.values(analysis.sections).filter(Boolean).length * 25 },
-    { subject: 'ATS', value: analysis.ats_friendly ? 100 : 30 },
+    { subject: 'Format', value: analysis.score_breakdown?.format_score ?? 70 },
+    { subject: 'Content', value: analysis.score_breakdown?.content_score ?? 70 },
+    { subject: 'Relevance', value: analysis.score_breakdown?.relevance_score ?? 70 },
+    { subject: 'ATS', value: analysis.score_breakdown?.ats_score ?? 70 },
+    { subject: 'Overall', value: analysis.score },
   ]
 
   return (
