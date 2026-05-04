@@ -1,0 +1,11 @@
+Analyze this CV and respond ONLY with a valid JSON object, no markdown, no explanation.
+Use this exact structure:
+{json_schema}
+
+Evaluate the CV considering:
+{evaluation_criteria}
+
+CV Content:
+{cv_text}
+
+{job_description_section}
