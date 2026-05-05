@@ -14,13 +14,22 @@ export default function App () {
   const [loading, setLoading] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState(null)
+  const [timeoutError, setTimeoutError] = useState(false)
 
   const handleAnalyzeStream = async () => {
     if (!file) return
     setLoading(true)
     setError(null)
+    setTimeoutError(false)
     setAnalysis(null)
     setIsGenerating(false)
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => {
+      controller.abort()
+      setTimeoutError(true)
+      setLoading(false)
+    }, 60000)
 
     const formData = new FormData()
     formData.append('file', file)
@@ -31,7 +40,8 @@ export default function App () {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/cv/analyze/stream`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
-        body: formData
+        body: formData,
+        signal: controller.signal
       })
 
       if (!response.ok) {
@@ -76,12 +86,16 @@ export default function App () {
         }
       }
     } catch (err) {
-      if (err.response?.status === 401) {
+      if (err.name === 'AbortError') {
+        setTimeoutError(true)
+      } else if (err.response?.status === 401) {
         logout()
         setAuthed(false)
+      } else {
+        setError(err.message || 'Something went wrong')
       }
-      setError(err.message || 'Something went wrong')
     } finally {
+      clearTimeout(timeoutId)
       setLoading(false)
     }
   }
@@ -164,6 +178,12 @@ export default function App () {
             {error && (
               <div className='mt-4 bg-red-900/30 border border-red-700 text-red-400 rounded-xl p-4 text-sm'>
                 {error}
+              </div>
+            )}
+
+            {timeoutError && (
+              <div className='mt-4 bg-yellow-900/30 border border-yellow-700 text-yellow-400 rounded-xl p-4 text-sm'>
+                Request timed out. Please try again.
               </div>
             )}
 
