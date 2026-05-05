@@ -85,7 +85,13 @@ async def analyze_stream(
                 result = parse_and_validate_dict(full_response)
             except Exception:
                 result = _analyze_fallback(text, job_description)
+
+            sections = result.get("sections", {})
+            if all(sections.values()) if sections else False:
+                result["ats_friendly"] = True
+
             set_cached(text, job_description, result)
+            cv_repo.create(db, current_user.id, file.filename, job_description, result, cv_text=text)
             yield f"data: {json.dumps(result)}\n\n"
         except Exception as e:
             logger.error(f"Stream error for user {current_user.id}: {e}")
