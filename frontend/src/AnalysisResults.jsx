@@ -97,8 +97,8 @@ export default function AnalysisResults ({ analysis }) {
       {/* ATS + Sections */}
       <div className='bg-gray-900 rounded-2xl p-6 border border-gray-800'>
         <h2 className='text-sm text-gray-400 mb-3'>ATS & Sections</h2>
-        <p className={`text-sm mb-3 ${analysis.ats_friendly ? 'text-green-400' : 'text-red-400'}`}>
-          {analysis.ats_friendly ? '✓ ATS Friendly' : '✗ Not ATS Friendly'}
+        <p className={`text-sm mb-3 ${analysis.ats_friendly ? 'text-green-400' : 'text-yellow-400'}`}>
+          {analysis.ats_message || (analysis.ats_friendly ? '✓ ATS Friendly' : '✗ Not ATS Friendly')}
         </p>
         <div className='grid grid-cols-2 gap-2'>
           {Object.entries(analysis.sections).map(([key, val]) => (

@@ -87,8 +87,20 @@ async def analyze_stream(
                 result = _analyze_fallback(text, job_description)
 
             sections = result.get("sections", {})
-            if all(sections.values()) if sections else False:
+            sections_count = sum(1 for v in sections.values() if v)
+
+            if sections_count == 4:
                 result["ats_friendly"] = True
+                result["ats_message"] = "All sections present"
+            elif sections_count >= 3:
+                result["ats_friendly"] = True
+                result["ats_message"] = f"{sections_count}/4 sections detected"
+            elif sections_count >= 2:
+                result["ats_friendly"] = False
+                result["ats_message"] = f"Only {sections_count}/4 sections detected"
+            else:
+                result["ats_friendly"] = False
+                result["ats_message"] = "Minimal sections detected"
 
             set_cached(text, job_description, result)
             cv_repo.create(db, current_user.id, file.filename, job_description, result, cv_text=text)
