@@ -1,4 +1,4 @@
-from .orchestrator import analyze as analyze_cv
+from .orchestrator import analyze as analyze_cv, analyze_stream
 from .exceptions import (
     CVAnalysisError,
     EmptyCVError,
@@ -9,6 +9,7 @@ from .exceptions import (
 
 __all__ = [
     "analyze_cv",
+    "analyze_stream",
     "CVAnalysisError",
     "EmptyCVError",
     "APIError",

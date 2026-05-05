@@ -79,6 +79,49 @@ Upload your CV (PDF or DOCX), optionally paste a job description, and get instan
 
 ---
 
+## Technical Decisions
+
+### Why FastAPI over Flask/Django?
+- **FastAPI** has native async support with `async/await`, which is ideal for I/O-bound operations (file parsing, API calls, Redis lookups)
+- Automatic OpenAPI docs (`/docs`) out of the box
+- Pydantic validation is first-class, not an afterthought like in Flask (which needs `marshmallow` or similar)
+
+### Why gpt-4o-mini?
+- Cost-effective: ~$0.15/M tokens vs $3/M for gpt-4o
+- Fast responses: adequate for structured CV analysis
+- Supports `response_format={"type": "json_object"}` for more reliable JSON output
+
+### Why temperature=0.3?
+- Low variance: same CV should get similar analysis across runs
+- High enough for natural language variation in recommendations, low enough to avoid "hallucinated" scores
+- 0.0 would be too deterministic for open-ended feedback
+
+### Why SHA-256 of CV text (not file)?
+- A PDF/DOCX can be the same resume with different metadata (filename, modification date)
+- Caching on file hash would cause unnecessary cache misses
+- Text hash ensures identical content gets the same cached result
+
+### Why streaming SSE?
+- Reduces perceived latency from ~5s to near-instant first byte
+- Users see partial JSON appearing character-by-character
+- Better UX without complex polling or websockets
+
+### System prompt design
+- Compact but rule-dense: no backstory, just operational constraints
+- Explicit edge case handling (empty CV, non-English, gaps without dates)
+- Output constraints prevent GPT from adding markdown or explanations outside JSON
+- Score validation via Pydantic `Field(ge=0, le=100)` — any score outside bounds is rejected
+
+### Temperature rationale
+| Value | Use case |
+|-------|----------|
+| 0.0 | Code generation, exact structure needed |
+| 0.3 | **This project** — consistent but natural scores |
+| 0.7 | Creative writing, brainstorming |
+| 1.0+ | High variance, experimental |
+
+---
+
 ## Tech Stack
 
 | Layer          | Technology                                          |
