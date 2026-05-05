@@ -1,6 +1,7 @@
 import redis
 import hashlib
 import json
+from loguru import logger
 from app.core.config import settings
 
 r = redis.from_url(settings.REDIS_URL, decode_responses=True)
@@ -11,10 +12,17 @@ def _make_key(cv_text: str, job_description: str) -> str:
     return "cv:" + hashlib.sha256(raw.encode()).hexdigest()
 
 def get_cached(cv_text: str, job_description: str) -> dict | None:
-    key = _make_key(cv_text, job_description)
-    data = r.get(key)
-    return json.loads(data) if data else None
+    try:
+        key = _make_key(cv_text, job_description)
+        data = r.get(key)
+        return json.loads(data) if data else None
+    except redis.RedisError as e:
+        logger.warning(f"Redis get error (returning None): {e}")
+        return None
 
 def set_cached(cv_text: str, job_description: str, result: dict):
-    key = _make_key(cv_text, job_description)
-    r.setex(key, CACHE_TTL, json.dumps(result))
+    try:
+        key = _make_key(cv_text, job_description)
+        r.setex(key, CACHE_TTL, json.dumps(result))
+    except redis.RedisError as e:
+        logger.warning(f"Redis set error (cache skipped): {e}")

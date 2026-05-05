@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from typing import List
 
 class Settings(BaseSettings):
     APP_NAME: str = "CV Analyzer API"
@@ -9,6 +10,14 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     SENTRY_DSN: str = ""
+    ALLOWED_ORIGINS: str = "*"
+
+    @property
+    def cors_origins(self) -> list[str]:
+        if self.ALLOWED_ORIGINS == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
+
     class Config:
         env_file = ".env"
 

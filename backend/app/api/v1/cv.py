@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from loguru import logger
 import sentry_sdk
+import json
 from app.services.cv_service import extract_text, analyze_cv
 from app.services.analyzer import analyze_stream as _analyze_stream, analyze_cv as _analyze_fallback
 from app.services.analyzer.parser import parse_and_validate_dict
@@ -13,9 +14,40 @@ from app.schemas.cv import CVAnalysisOut
 from app.db.session import get_db
 from app.api.v1.deps import get_current_user
 from app.models.user import User
-import json
 
 router = APIRouter(prefix="/cv", tags=["cv"])
+
+ALLOWED_EXTENSIONS = (".pdf", ".docx")
+MAX_FILE_SIZE = 5 * 1024 * 1024
+
+def validate_file(file: UploadFile):
+    if not file.filename.endswith(ALLOWED_EXTENSIONS):
+        raise HTTPException(status_code=400, detail="Solo PDF o DOCX")
+
+def check_file_size(file_bytes: bytes):
+    if len(file_bytes) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="Máximo 5MB")
+
+def compute_ats_info(result: dict):
+    sections = result.get("sections", {})
+    count = sum(1 for v in sections.values() if v)
+    if count == 4:
+        result["ats_friendly"] = True
+        result["ats_message"] = "All sections present"
+    elif count >= 3:
+        result["ats_friendly"] = True
+        result["ats_message"] = f"{count}/4 sections detected"
+    elif count >= 2:
+        result["ats_friendly"] = False
+        result["ats_message"] = f"Only {count}/4 sections detected"
+    else:
+        result["ats_friendly"] = False
+        result["ats_message"] = "Minimal sections detected"
+
+def _save_and_enrich(db: Session, user_id: int, filename: str, job_desc: str, result: dict, cv_text: str):
+    compute_ats_info(result)
+    set_cached(cv_text, job_desc, result)
+    return cv_repo.create(db, user_id, filename, job_desc, result, cv_text=cv_text)
 
 @router.post("/analyze", response_model=CVAnalysisOut)
 async def analyze(
@@ -26,12 +58,9 @@ async def analyze(
 ):
     logger.info(f"User {current_user.id} analyzing file: {file.filename}")
 
-    if not file.filename.endswith((".pdf", ".docx")):
-        raise HTTPException(status_code=400, detail="Solo PDF o DOCX")
-
+    validate_file(file)
     file_bytes = await file.read()
-    if len(file_bytes) > 5 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Máximo 5MB")
+    check_file_size(file_bytes)
 
     try:
         text = extract_text(file_bytes, file.filename)
@@ -41,7 +70,7 @@ async def analyze(
         sentry_sdk.capture_exception(e)
         raise HTTPException(status_code=500, detail=str(e))
 
-    saved = cv_repo.create(db, current_user.id, file.filename, job_description, result, cv_text=text)
+    saved = _save_and_enrich(db, current_user.id, file.filename, job_description, result, cv_text=text)
     logger.info(f"CV analysis saved for user {current_user.id}, score: {result.get('score')}")
     return saved
 
@@ -54,12 +83,9 @@ async def analyze_stream(
 ):
     logger.info(f"User {current_user.id} streaming analysis for file: {file.filename}")
 
-    if not file.filename.endswith((".pdf", ".docx")):
-        raise HTTPException(status_code=400, detail="Solo PDF o DOCX")
-
+    validate_file(file)
     file_bytes = await file.read()
-    if len(file_bytes) > 5 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Máximo 5MB")
+    check_file_size(file_bytes)
 
     try:
         text = extract_text(file_bytes, file.filename)
@@ -86,24 +112,7 @@ async def analyze_stream(
             except Exception:
                 result = _analyze_fallback(text, job_description)
 
-            sections = result.get("sections", {})
-            sections_count = sum(1 for v in sections.values() if v)
-
-            if sections_count == 4:
-                result["ats_friendly"] = True
-                result["ats_message"] = "All sections present"
-            elif sections_count >= 3:
-                result["ats_friendly"] = True
-                result["ats_message"] = f"{sections_count}/4 sections detected"
-            elif sections_count >= 2:
-                result["ats_friendly"] = False
-                result["ats_message"] = f"Only {sections_count}/4 sections detected"
-            else:
-                result["ats_friendly"] = False
-                result["ats_message"] = "Minimal sections detected"
-
-            set_cached(text, job_description, result)
-            cv_repo.create(db, current_user.id, file.filename, job_description, result, cv_text=text)
+            _save_and_enrich(db, current_user.id, file.filename, job_description, result, cv_text=text)
             yield f"data: {json.dumps(result)}\n\n"
         except Exception as e:
             logger.error(f"Stream error for user {current_user.id}: {e}")
@@ -111,7 +120,7 @@ async def analyze_stream(
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
             return
 
-        yield f"data: [DONE]\n\n"
+        yield "data: [DONE]\n\n"
 
     return StreamingResponse(
         event_stream(),
