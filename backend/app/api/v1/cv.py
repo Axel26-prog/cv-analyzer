@@ -85,6 +85,7 @@ async def analyze_stream(
             except Exception:
                 result = _analyze_cv(text, job_description)
             set_cached(text, job_description, result)
+            yield f"data: {json.dumps(result)}\n\n"
         except Exception as e:
             logger.error(f"Stream error for user {current_user.id}: {e}")
             sentry_sdk.capture_exception(e)
@@ -100,6 +101,9 @@ async def analyze_stream(
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Authorization, Content-Type",
         }
     )
 

@@ -31,7 +31,7 @@ export const analyzeCV = (file, jobDescription) => {
   return api.post('/cv/analyze', formData)
 }
 
-export const analyzeCVStream = async function* (file, jobDescription, token) {
+export const analyzeCVStream = async function * (file, jobDescription, token) {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('job_description', jobDescription)
