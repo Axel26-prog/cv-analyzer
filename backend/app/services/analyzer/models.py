@@ -26,7 +26,7 @@ class CVAnalysis(BaseModel):
     keywords_missing: list[str]
     ats_friendly: bool
     sections: CVSections
-    seniority_level: Literal["Junior", "Mid", "Senior", "Lead", "Executive"]
+    seniority_level: Literal["Entry", "Junior", "Mid", "Senior", "Lead", "Manager", "Executive"]
     years_experience: float
     tech_stack: list[str]
     employment_gaps: list[str]

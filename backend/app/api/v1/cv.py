@@ -3,8 +3,8 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from loguru import logger
 import sentry_sdk
-from app.services.cv_service import extract_text, analyze_cv as _analyze_cv
-from app.services.analyzer import analyze_stream as _analyze_stream
+from app.services.cv_service import extract_text, analyze_cv
+from app.services.analyzer import analyze_stream as _analyze_stream, analyze as _analyze
 from app.services.analyzer.parser import parse_and_validate_dict
 from app.services.cache_service import get_cached, set_cached
 from app.repositories import cv_repo
@@ -83,7 +83,7 @@ async def analyze_stream(
             try:
                 result = parse_and_validate_dict(full_response)
             except Exception:
-                result = _analyze_cv(text, job_description)
+                result = _analyze(text, job_description)
             set_cached(text, job_description, result)
             yield f"data: {json.dumps(result)}\n\n"
         except Exception as e:
