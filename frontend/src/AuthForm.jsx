@@ -139,7 +139,7 @@ export default function AuthForm ({ onAuth }) {
               />
             </div>
             {!isLogin && (
-              <div className='flex gap-4 mt-2'>
+              <div className='flex gap-2 flex-wrap mt-2'>
                 <span className={`text-xs ${password.length >= 8 ? 'text-emerald-400' : 'text-gray-500'}`}>8+ chars</span>
                 <span className={`text-xs ${/[A-Z]/.test(password) ? 'text-emerald-400' : 'text-gray-500'}`}>Uppercase</span>
                 <span className={`text-xs ${/[0-9]/.test(password) ? 'text-emerald-400' : 'text-gray-500'}`}>Number</span>

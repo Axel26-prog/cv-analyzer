@@ -8,7 +8,7 @@ export default function UploadSection ({ file, setFile, jobDescription, setJobDe
           </svg>
           Powered by GPT-4o
         </div>
-        <h2 className='text-4xl font-bold text-white'>
+        <h2 className='text-3xl md:text-4xl font-bold text-white'>
           Analyze your <span className='text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400'>CV</span>
         </h2>
         <p className='text-gray-400 max-w-md mx-auto'>
@@ -17,7 +17,7 @@ export default function UploadSection ({ file, setFile, jobDescription, setJobDe
       </div>
 
       <div className='bg-gray-900/50 rounded-2xl p-6 border border-gray-800 backdrop-blur-sm'>
-        <div className='flex gap-6'>
+        <div className='flex flex-col md:flex-row gap-6'>
           <div className='flex-1'>
             <label className='block text-sm font-medium text-gray-300 mb-3'>
               <span className='flex items-center gap-2'>
@@ -27,7 +27,7 @@ export default function UploadSection ({ file, setFile, jobDescription, setJobDe
                 Upload CV
               </span>
             </label>
-            <div className='border-2 border-dashed border-gray-700 rounded-xl p-8 text-center hover:border-indigo-500/50 transition-colors cursor-pointer group'>
+            <div className='border-2 border-dashed border-gray-700 rounded-xl p-6 md:p-8 text-center hover:border-indigo-500/50 transition-colors cursor-pointer group'>
               <input
                 type='file'
                 accept='.pdf,.docx'

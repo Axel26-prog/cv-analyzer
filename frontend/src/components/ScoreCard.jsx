@@ -24,22 +24,22 @@ export default function ScoreCard ({ analysis }) {
   }
 
   return (
-    <div className={`bg-gradient-to-br ${getScoreGradient(analysis.score)} rounded-2xl p-8 border border-white/10 relative overflow-hidden`}>
+    <div className={`bg-gradient-to-br ${getScoreGradient(analysis.score)} rounded-2xl p-6 md:p-8 border border-white/10 relative overflow-hidden`}>
       <div className='absolute inset-0 bg-gradient-to-t from-black/20 to-transparent' />
       <div className='absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2' />
       <div className='absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2' />
 
-      <div className='relative flex items-center gap-8'>
+      <div className='relative flex flex-col md:flex-row items-center gap-6 md:gap-8'>
         <div className='relative'>
-          <div className='w-32 h-32 rounded-full bg-gradient-to-br from-white/20 to-white/5 flex items-center justify-center backdrop-blur-sm border-2 border-white/20'>
-            <span className={`text-5xl font-bold ${getScoreTextColor(analysis.score)}`}>
+          <div className='w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-white/20 to-white/5 flex items-center justify-center backdrop-blur-sm border-2 border-white/20'>
+            <span className={`text-4xl md:text-5xl font-bold ${getScoreTextColor(analysis.score)}`}>
               {analysis.score}
             </span>
           </div>
           <div className='absolute inset-0 rounded-full border-2 border-white/10 animate-pulse' />
         </div>
 
-        <div className='flex-1'>
+        <div className='flex-1 text-center md:text-left'>
           <div className='flex items-center gap-2 mb-2'>
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getScoreBadgeColor(analysis.score)}`}>
               {getScoreLabel(analysis.score)}

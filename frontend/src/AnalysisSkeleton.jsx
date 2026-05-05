@@ -22,23 +22,23 @@ export default function AnalysisSkeleton () {
       animate='show'
     >
       {/* Hero Score Card */}
-      <motion.div className='bg-gradient-to-br from-indigo-900/50 to-purple-900/50 rounded-2xl p-8 border border-indigo-500/30' variants={item}>
-        <div className='flex items-center gap-6'>
+      <motion.div className='bg-gradient-to-br from-indigo-900/50 to-purple-900/50 rounded-2xl p-6 md:p-8 border border-indigo-500/30' variants={item}>
+        <div className='flex flex-col md:flex-row items-center gap-6'>
           <div className='relative'>
-            <div className='w-28 h-28 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center'>
-              <span className='text-4xl font-bold'>--</span>
+            <div className='w-24 h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center'>
+              <span className='text-3xl md:text-4xl font-bold'>--</span>
             </div>
             <div className='absolute inset-0 rounded-full border-4 border-indigo-400/30 animate-ping' />
           </div>
-          <div className='flex-1'>
-            <div className='h-8 w-48 bg-indigo-400/20 rounded-lg mb-3' />
-            <div className='h-4 w-32 bg-indigo-400/10 rounded' />
+          <div className='flex-1 text-center md:text-left'>
+            <div className='h-8 w-48 bg-indigo-400/20 rounded-lg mb-3 mx-auto md:mx-0' />
+            <div className='h-4 w-32 bg-indigo-400/10 rounded mx-auto md:mx-0' />
           </div>
         </div>
       </motion.div>
 
       {/* Stats Grid */}
-      <div className='grid grid-cols-4 gap-4'>
+      <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
         {[...Array(4)].map((_, i) => (
           <motion.div key={i} className='bg-gray-900/50 rounded-xl p-4 border border-gray-800' variants={item}>
             <div className='h-3 w-16 bg-gray-700 rounded mb-2' />
@@ -48,16 +48,16 @@ export default function AnalysisSkeleton () {
       </div>
 
       {/* Main Content Grid */}
-      <div className='grid grid-cols-3 gap-6'>
-        <motion.div className='col-span-2 space-y-4' variants={item}>
-          <div className='bg-gray-900/50 rounded-xl p-6 border border-gray-800'>
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+        <motion.div className='col-span-1 lg:col-span-2 space-y-4' variants={item}>
+          <div className='bg-gray-900/50 rounded-xl p-4 md:p-6 border border-gray-800'>
             <div className='h-4 w-24 bg-gray-700 rounded mb-4' />
             <div className='space-y-2'>
               <div className='h-3 w-full bg-gray-800 rounded' />
               <div className='h-3 w-4/5 bg-gray-800 rounded' />
             </div>
           </div>
-          <div className='bg-gray-900/50 rounded-xl p-6 border border-gray-800'>
+          <div className='bg-gray-900/50 rounded-xl p-4 md:p-6 border border-gray-800'>
             <div className='h-4 w-20 bg-gray-700 rounded mb-4' />
             <div className='grid grid-cols-2 gap-3'>
               <div className='h-8 bg-gray-800 rounded-lg' />
@@ -67,7 +67,7 @@ export default function AnalysisSkeleton () {
         </motion.div>
 
         <motion.div className='space-y-4' variants={item}>
-          <div className='bg-gray-900/50 rounded-xl p-6 border border-gray-800'>
+          <div className='bg-gray-900/50 rounded-xl p-4 md:p-6 border border-gray-800'>
             <div className='h-4 w-16 bg-gray-700 rounded mb-4' />
             <div className='space-y-2'>
               <div className='h-6 w-full bg-gray-800 rounded-full' />
@@ -78,7 +78,7 @@ export default function AnalysisSkeleton () {
       </div>
 
       {/* Keywords */}
-      <motion.div className='bg-gray-900/50 rounded-xl p-6 border border-gray-800' variants={item}>
+      <motion.div className='bg-gray-900/50 rounded-xl p-4 md:p-6 border border-gray-800' variants={item}>
         <div className='h-4 w-20 bg-gray-700 rounded mb-4' />
         <div className='flex gap-2 flex-wrap'>
           <div className='h-7 w-20 bg-gray-800 rounded-full' />

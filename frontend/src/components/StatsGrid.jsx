@@ -19,7 +19,7 @@ export default function StatsGrid ({ scoreBreakdown }) {
   ]
 
   return (
-    <div className='grid grid-cols-4 gap-4'>
+    <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
       {stats.map((stat, i) => (
         <div key={i} className='bg-gray-900/50 rounded-xl p-4 border border-gray-800 hover:border-gray-700 transition-colors'>
           <div className='flex items-center gap-2 mb-2'>
