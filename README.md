@@ -44,23 +44,23 @@ Upload your CV (PDF or DOCX), optionally paste a job description, and get instan
 │   React 18 + Vite   │  HTTPS   │                                                │
 │   Tailwind CSS      │ ───────► │  ┌─────────────────┐   ┌────────────────────┐ │
 │   Recharts          │          │  │   Auth Service  │   │   CV Analysis      │ │
-│                     │          │  │   JWT / bcrypt  │   │   OpenAI API       │ │
-│   ▲ Vercel          │          │  │   OAuth2Bearer  │   │   pdfplumber       │ │
+│                     │          │  │   JWT / bcrypt  │   │   Azure OpenAI     │ │
+│   ▲ Azure           │          │  │   OAuth2Bearer  │   │   pdfplumber       │ │
 └─────────────────────┘          │  └─────────────────┘   └─────────┬──────────┘ │
-                                 │                                   │            │
-                                 │  ┌────────────────────────────────▼──────────┐ │
-                                 │  │         Repository Pattern                │ │
-                                 │  │         user_repo · cv_repo               │ │
-                                 │  └───────────┬───────────────────┬───────────┘ │
-                                 │              │                   │            │
-                                 │  ┌───────────▼──────┐  ┌────────▼──────────┐ │
-                                 │  │  PostgreSQL 16   │  │    Redis 7        │ │
-                                 │  │  SQLAlchemy 2.0  │  │  SHA-256 cache    │ │
-                                 │  │  users           │  │  24h TTL          │ │
-                                 │  │  cv_analyses     │  │                   │ │
-                                 │  └──────────────────┘  └───────────────────┘ │
-                                 │  ▲ Railway                                    │
-                                 └────────────────────────────────────────────────┘
+                                  │                                   │            │
+                                  │  ┌────────────────────────────────▼──────────┐ │
+                                  │  │         Repository Pattern                │ │
+                                  │  │         user_repo · cv_repo               │ │
+                                  │  └───────────┬───────────────────┬───────────┘ │
+                                  │              │                   │            │
+                                  │  ┌───────────▼──────┐  ┌────────▼──────────┐ │
+                                  │  │  PostgreSQL 16   │  │    Redis 7        │ │
+                                  │  │  SQLAlchemy 2.0  │  │  SHA-256 cache    │ │
+                                  │  │  users           │  │  24h TTL          │ │
+                                  │  │  cv_analyses     │  │                   │ │
+                                  │  └──────────────────┘  └───────────────────┘ │
+                                  │  ▲ Railway                                    │
+                                  └────────────────────────────────────────────────┘
 
   ┌──────────────────────────────────────────────────────────────────────────────┐
   │  🐳  Docker + docker-compose  —  full stack with a single command           │
@@ -129,14 +129,14 @@ Upload your CV (PDF or DOCX), optionally paste a job description, and get instan
 | Frontend       | React 18, Vite, Tailwind CSS, Axios, Recharts       |
 | Backend        | FastAPI, Python 3.11, SQLAlchemy 2.0                |
 | Auth           | JWT (python-jose), passlib + bcrypt                 |
-| AI             | OpenAI API (gpt-4o-mini)                            |
+| AI             | Azure OpenAI (gpt-4o) or OpenAI                     |
 | Database       | PostgreSQL 16                                       |
 | Cache          | Redis 7                                             |
 | File parsing   | pdfplumber, python-docx                             |
 | Monitoring     | Sentry SDK, loguru                                  |
 | Testing        | pytest (88% coverage)                              |
 | Infrastructure | Docker, docker-compose                              |
-| CI/CD          | GitHub Actions → Vercel (frontend) + Railway (backend) |
+| CI/CD          | GitHub Actions → Azure Static Web Apps (frontend) + Railway (backend) |
 
 ---
 
@@ -268,11 +268,16 @@ push to main / feat/** / pull request
 
 ## Deployment
 
-### Frontend → Vercel
+### Frontend → Azure Static Web Apps
 
-1. Import the repo in [Vercel](https://vercel.com), set root directory to `frontend/`
-2. Add environment variable: `VITE_API_URL` → your Railway backend URL + `/api/v1`
-3. Vercel deploys automatically on every push to `main`
+1. Create a Static Web App in [Azure Portal](https://portal.azure.com)
+2. Connect to GitHub and configure:
+   - **Build preset**: React
+   - **App location**: `/frontend`
+   - **Output location**: `dist`
+3. Add environment variable in GitHub Actions workflow:
+   - `VITE_API_URL` → your Railway backend URL + `/api/v1`
+4. Deploys automatically on every push to `main`
 
 ### Backend → Railway
 
@@ -281,13 +286,33 @@ push to main / feat/** / pull request
 
 | Variable        | Value                            |
 |-----------------|----------------------------------|
-| `OPENAI_API_KEY`| Your OpenAI API key              |
 | `DATABASE_URL`  | Provided by Railway PostgreSQL   |
 | `REDIS_URL`     | Provided by Railway Redis        |
 | `SECRET_KEY`    | A random secret string           |
 | `SENTRY_DSN`    | Your Sentry DSN (optional)       |
 
 3. Railway deploys automatically on every push to `main`
+
+### Azure OpenAI Configuration (Optional)
+
+The backend supports Azure OpenAI as an alternative to OpenAI. To enable:
+
+| Variable | Description |
+|----------|-------------|
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint (e.g., `https://your-resource.openai.azure.com`) |
+| `AZURE_OPENAI_API_KEY` | Your Azure OpenAI API key |
+| `AZURE_OPENAI_DEPLOYMENT_NAME` | Deployment name (e.g., `gpt-4o`) |
+| `AZURE_OPENAI_API_VERSION` | API version (default: `2024-05-01-preview`) |
+
+### Azure Blob Storage (Optional)
+
+For storing CV files in Azure Blob Storage:
+
+| Variable | Description |
+|----------|-------------|
+| `AZURE_STORAGE_CONNECTION_STRING` | Connection string from Azure Storage |
+| `AZURE_STORAGE_CONTAINER_NAME` | Container name (e.g., `cv-files`) |
+| `AZURE_STORAGE_BLOB_URL` | Blob URL prefix (e.g., `https://youraccount.blob.core.windows.net`) |
 
 ---
 
