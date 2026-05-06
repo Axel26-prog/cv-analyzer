@@ -11,8 +11,8 @@ use_azure = os.getenv("AZURE_OPENAI_ENDPOINT") and os.getenv("AZURE_OPENAI_API_K
 if use_azure:
     client = OpenAI(
         api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-        base_url=f"{os.getenv('AZURE_OPENAI_ENDPOINT')}/openai/deployments/{os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME')}",
-        default_query={"api-version": "2024-02-01"},
+        base_url=f"{os.getenv('AZURE_OPENAI_ENDPOINT').rstrip('/')}/openai/deployments/{os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME')}",
+        default_query={"api-version": "2024-05-01-preview"},
         default_headers={"api-key": os.getenv("AZURE_OPENAI_API_KEY")}
     )
     default_model = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini")
