@@ -6,7 +6,19 @@ from typing import Any, Callable, Generator
 
 load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+use_azure = os.getenv("AZURE_OPENAI_ENDPOINT") and os.getenv("AZURE_OPENAI_API_KEY")
+
+if use_azure:
+    client = OpenAI(
+        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        base_url=f"{os.getenv('AZURE_OPENAI_ENDPOINT')}/openai/deployments/{os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME')}",
+        default_query={"api-version": "2024-02-01"},
+        default_headers={"api-key": os.getenv("AZURE_OPENAI_API_KEY")}
+    )
+    default_model = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini")
+else:
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    default_model = "gpt-4o-mini"
 
 class APIError(Exception):
     pass
@@ -32,12 +44,22 @@ def _with_retry(fn: Callable, max_retries: int, rate_limit_wait: int, general_wa
 
 def stream_openai(
     messages: list[dict],
-    model: str = "gpt-4o-mini",
+    model: str = None,
     temperature: float = 0.3,
     timeout: int = 60,
     max_retries: int = 3
 ) -> Generator[str, None, None]:
+    model = model or default_model
     def _create_stream():
+        if use_azure:
+            return client.chat.completions.create(
+                model=model,
+                messages=messages,
+                response_format={"type": "json_object"},
+                temperature=temperature,
+                timeout=timeout,
+                stream=True
+            )
         return client.chat.completions.create(
             model=model,
             messages=messages,
@@ -54,19 +76,29 @@ def stream_openai(
 
 def call_openai(
     messages: list[dict],
-    model: str = "gpt-4o-mini",
+    model: str = None,
     temperature: float = 0.3,
     timeout: int = 30,
     max_retries: int = 3
 ) -> str:
+    model = model or default_model
     def _call():
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            response_format={"type": "json_object"},
-            temperature=temperature,
-            timeout=timeout
-        )
+        if use_azure:
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                response_format={"type": "json_object"},
+                temperature=temperature,
+                timeout=timeout
+            )
+        else:
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                response_format={"type": "json_object"},
+                temperature=temperature,
+                timeout=timeout
+            )
         return response.choices[0].message.content
 
     return _with_retry(_call, max_retries, rate_limit_wait=2, general_wait=1)

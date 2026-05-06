@@ -14,6 +14,7 @@ from app.schemas.cv import CVAnalysisOut
 from app.db.session import get_db
 from app.api.v1.deps import get_current_user
 from app.models.user import User
+from app.services import storage_service
 
 router = APIRouter(prefix="/cv", tags=["cv"])
 
@@ -44,9 +45,19 @@ def compute_ats_info(result: dict):
         result["ats_friendly"] = False
         result["ats_message"] = "Minimal sections detected"
 
-def _save_and_enrich(db: Session, user_id: int, filename: str, job_desc: str, result: dict, cv_text: str):
+def _save_and_enrich(db: Session, user_id: int, filename: str, job_desc: str, result: dict, cv_text: str, file_bytes: bytes = None):
     compute_ats_info(result)
     set_cached(cv_text, job_desc, result)
+
+    blob_url = None
+    if file_bytes and storage_service.AZURE_STORAGE_CONNECTION_STRING:
+        try:
+            blob_url = storage_service.upload_cv_file(file_bytes, filename, user_id)
+            if blob_url:
+                result["storage_url"] = blob_url
+        except Exception as e:
+            logger.warning(f"Failed to upload to blob storage: {e}")
+
     return cv_repo.create(db, user_id, filename, job_desc, result, cv_text=cv_text)
 
 @router.post("/analyze", response_model=CVAnalysisOut)
@@ -70,7 +81,7 @@ async def analyze(
         sentry_sdk.capture_exception(e)
         raise HTTPException(status_code=500, detail=str(e))
 
-    saved = _save_and_enrich(db, current_user.id, file.filename, job_description, result, cv_text=text)
+    saved = _save_and_enrich(db, current_user.id, file.filename, job_description, result, cv_text=text, file_bytes=file_bytes)
     logger.info(f"CV analysis saved for user {current_user.id}, score: {result.get('score')}")
     return saved
 
@@ -112,7 +123,7 @@ async def analyze_stream(
             except Exception:
                 result = _analyze_fallback(text, job_description)
 
-            _save_and_enrich(db, current_user.id, file.filename, job_description, result, cv_text=text)
+            _save_and_enrich(db, current_user.id, file.filename, job_description, result, cv_text=text, file_bytes=file_bytes)
             yield f"data: {json.dumps(result)}\n\n"
         except Exception as e:
             logger.error(f"Stream error for user {current_user.id}: {e}")
