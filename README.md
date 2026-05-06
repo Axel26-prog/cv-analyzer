@@ -4,10 +4,10 @@
 
 [![CI](https://github.com/Axel26-prog/cv-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/Axel26-prog/cv-analyzer/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://cv-analyzer-mocha.vercel.app)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://nice-beach-0041fbd0f.7.azurestaticapps.net)
 [![Coverage](https://img.shields.io/badge/coverage-88%25-brightgreen)](https://github.com/Axel26-prog/cv-analyzer)
 
-**[Live Demo](https://cv-analyzer-mocha.vercel.app)** · [Report a Bug](https://github.com/Axel26-prog/cv-analyzer/issues) · [Request a Feature](https://github.com/Axel26-prog/cv-analyzer/issues)
+**[Live Demo](https://nice-beach-0041fbd0f.7.azurestaticapps.net)** · [Report a Bug](https://github.com/Axel26-prog/cv-analyzer/issues) · [Request a Feature](https://github.com/Axel26-prog/cv-analyzer/issues)
 
 ---
 
