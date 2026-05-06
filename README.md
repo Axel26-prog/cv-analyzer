@@ -261,7 +261,7 @@ push to main / feat/** / pull request
                      └── npm run build
              │
              ├── ✅ pass → auto deploy to Railway (backend)
-             └── ✅ pass → auto deploy to Vercel  (frontend)
+             └── ✅ pass → auto deploy to Azure Static Web Apps (frontend)
 ```
 
 ---
@@ -290,23 +290,26 @@ push to main / feat/** / pull request
 | `REDIS_URL`     | Provided by Railway Redis        |
 | `SECRET_KEY`    | A random secret string           |
 | `SENTRY_DSN`    | Your Sentry DSN (optional)       |
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint (optional) |
+| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key (optional) |
+| `AZURE_OPENAI_DEPLOYMENT_NAME` | Azure deployment name (optional) |
 
 3. Railway deploys automatically on every push to `main`
 
-### Azure OpenAI Configuration (Optional)
+### Azure OpenAI Configuration
 
-The backend supports Azure OpenAI as an alternative to OpenAI. To enable:
+The backend supports Azure OpenAI as an alternative to OpenAI. To enable, add these variables in Railway:
 
 | Variable | Description |
 |----------|-------------|
-| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint (e.g., `https://your-resource.openai.azure.com`) |
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint (e.g., `https://cv-analyzer.openai.azure.com`) |
 | `AZURE_OPENAI_API_KEY` | Your Azure OpenAI API key |
 | `AZURE_OPENAI_DEPLOYMENT_NAME` | Deployment name (e.g., `gpt-4o`) |
 | `AZURE_OPENAI_API_VERSION` | API version (default: `2024-05-01-preview`) |
 
-### Azure Blob Storage (Optional)
+### Azure Blob Storage
 
-For storing CV files in Azure Blob Storage:
+For storing CV files in Azure Blob Storage, add these variables in Railway:
 
 | Variable | Description |
 |----------|-------------|
@@ -341,7 +344,8 @@ cv-analyzer/
 │   │       ├── prompts/            # Prompt templates (.txt)
 │   │       ├── auth_service.py
 │   │       ├── cv_service.py       # CV extraction + caching
-│   │       └── cache_service.py
+│   │       ├── cache_service.py
+│   │       └── storage_service.py   # Azure Blob Storage integration
 │   ├── tests/                      # pytest (88% coverage)
 │   ├── Dockerfile
 │   └── requirements.txt
