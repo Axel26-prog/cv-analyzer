@@ -29,8 +29,8 @@ jobs:
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          artifact-name: angularapp
-          files: frontend/dist/**/*
+          name: angularapp
+          path: frontend/dist
 
   deploy_job:
     if: github.event_name == 'push'
