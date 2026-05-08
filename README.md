@@ -103,7 +103,6 @@ Upload your CV (PDF or DOCX), optionally paste a job description, and get instan
 
 ### Why streaming SSE?
 - Reduces perceived latency from ~5s to near-instant first byte
-- Users see partial JSON appearing character-by-character
 - Better UX without complex polling or websockets
 
 ### System prompt design
