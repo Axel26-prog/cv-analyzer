@@ -163,10 +163,12 @@ def test_reset_password_invalid_token(client):
     assert res.status_code == 400
 
 
-def test_register_rate_limited(client, db):
+def test_register_rate_limited(client, db, monkeypatch):
     import uuid
     from app.core.limiter import limiter
+    from app.core.config import settings
 
+    monkeypatch.setattr(settings, "REGISTER_RATE_LIMIT", "3/day")
     client_ip = f"203.0.113.{uuid.uuid4().int % 250 + 1}"
     headers = {"X-Forwarded-For": client_ip}
     limiter.enabled = True

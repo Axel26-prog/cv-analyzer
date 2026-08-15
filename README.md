@@ -190,6 +190,9 @@ SENTRY_DSN=your_sentry_dsn        # optional
 FRONTEND_URL=http://localhost:5173
 PASSWORD_RESET_TOKEN_EXPIRE_MINUTES=60
 
+# Rate limiting (slowapi format; e.g. 10/day, 100/hour, 5/minute)
+REGISTER_RATE_LIMIT=10/day
+
 # Email transport — set RESEND_API_KEY (preferred) OR SMTP_* (fallback).
 # If neither is set, verification/reset links are logged instead of emailed (dev mode).
 MAIL_FROM=CV Analyzer <no-reply@cvanalyzer.com>
@@ -341,7 +344,7 @@ The backend enforces **email verification**, **password recovery**, and **regist
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/register` | Create an account (max 3 per IP per day). Sends a verification email. |
+| `POST` | `/register` | Create an account (rate-limited per IP via `REGISTER_RATE_LIMIT`, default 10/day). Sends a verification email. |
 | `GET`  | `/verify-email?token=xxx` | Confirm the email and activate the account. |
 | `POST` | `/login` | Obtain a JWT. Blocked until the email is verified. |
 | `POST` | `/forgot-password` | Email a 1-hour reset link (always returns 200 — no email enumeration). |
@@ -360,10 +363,11 @@ Unverified users cannot log in or call any protected endpoint (`/cv/*`).
 | `SMTP_USER` / `SMTP_PASSWORD` | SMTP credentials (optional). |
 | `FRONTEND_URL` | Public URL of the SPA (used to build verification/reset links). |
 | `PASSWORD_RESET_TOKEN_EXPIRE_MINUTES` | Reset-token lifetime (default `60`). |
+| `REGISTER_RATE_LIMIT` | slowapi limit string for `/auth/register` (default `10/day`; e.g. `100/hour`). |
 
 If no transport is configured, verification/reset links are written to the logs instead of emailed (handy for local dev).
 
-**Rate limiting** — `/register` is limited to **3 requests per IP per day** via [slowapi](https://slowapi.readthedocs.io/) backed by Redis, with an in-memory fallback if Redis is unreachable. `X-Forwarded-For` is trusted for the client IP (the app runs behind Azure Front Door / Vercel).
+**Rate limiting** — `/register` is rate-limited per IP via [slowapi](https://slowapi.readthedocs.io/) backed by Redis, with an in-memory fallback if Redis is unreachable. The limit is configurable through the `REGISTER_RATE_LIMIT` env var (slowapi format, e.g. `10/day`, `100/hour`, `5/minute`; default `10/day`). `X-Forwarded-For` is trusted for the client IP (the app runs behind Azure Front Door / Vercel).
 
 **Abuse prevention** — Gmail/Googlemail dot-trick and `+` aliases are normalized before storing (e.g. `name.last+tag@gmail.com` → `namelast@gmail.com`) and the normalized email is `UNIQUE`, so alias-based duplicate accounts are rejected. Registrations from disposable/temporary email domains are blocked via a self-maintained list in `backend/app/services/disposable_domains.py`.
 

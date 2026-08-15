@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 60
+    REGISTER_RATE_LIMIT: str = "10/day"
     SENTRY_DSN: str = ""
     ALLOWED_ORIGINS: str = "*"
 

@@ -19,12 +19,13 @@ from app.services.auth_service import (
     reset_password,
 )
 from app.core.limiter import limiter
+from app.core.config import settings
 from app.db.session import get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserOut)
-@limiter.limit("3/day")
+@limiter.limit(lambda: settings.REGISTER_RATE_LIMIT)
 def do_register(request: Request, body: UserCreate, db: Session = Depends(get_db)):
     try:
         user = register(db, body.email, body.password)
