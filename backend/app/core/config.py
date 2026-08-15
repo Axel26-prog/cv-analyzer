@@ -9,8 +9,19 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 60
     SENTRY_DSN: str = ""
     ALLOWED_ORIGINS: str = "*"
+
+    FRONTEND_URL: str = "http://localhost:5173"
+
+    MAIL_FROM: str = "CV Analyzer <no-reply@cvanalyzer.com>"
+
+    RESEND_API_KEY: str = ""
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
 
     @property
     def cors_origins(self) -> list[str]:
@@ -20,5 +31,6 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 settings = Settings()

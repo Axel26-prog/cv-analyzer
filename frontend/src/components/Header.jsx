@@ -31,8 +31,7 @@ export default function Header ({ tab, setTab, onLogout }) {
           <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
             {mobileMenuOpen
               ? <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
-              : <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 6h16M4 12h16M4 18h16' />
-            }
+              : <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 6h16M4 12h16M4 18h16' />}
           </svg>
         </button>
 
@@ -49,6 +48,12 @@ export default function Header ({ tab, setTab, onLogout }) {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'history' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
             >
               History
+            </button>
+            <button
+              onClick={() => setTab('applications')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'applications' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+            >
+              Applications
             </button>
           </nav>
           <button onClick={handleLogout} className='text-gray-500 hover:text-gray-300 transition-colors text-sm'>
@@ -70,6 +75,12 @@ export default function Header ({ tab, setTab, onLogout }) {
             className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all text-left ${tab === 'history' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
           >
             History
+          </button>
+          <button
+            onClick={() => { setTab('applications'); setMobileMenuOpen(false) }}
+            className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all text-left ${tab === 'applications' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+          >
+            Applications
           </button>
           <button
             onClick={() => { handleLogout(); setMobileMenuOpen(false) }}

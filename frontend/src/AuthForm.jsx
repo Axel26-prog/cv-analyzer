@@ -10,7 +10,7 @@ const validatePassword = (password) => {
   return null
 }
 
-export default function AuthForm ({ onAuth }) {
+export default function AuthForm ({ onAuth, onForgotPassword }) {
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -143,6 +143,17 @@ export default function AuthForm ({ onAuth }) {
                 <span className={`text-xs ${password.length >= 8 ? 'text-emerald-400' : 'text-gray-500'}`}>8+ chars</span>
                 <span className={`text-xs ${/[A-Z]/.test(password) ? 'text-emerald-400' : 'text-gray-500'}`}>Uppercase</span>
                 <span className={`text-xs ${/[0-9]/.test(password) ? 'text-emerald-400' : 'text-gray-500'}`}>Number</span>
+              </div>
+            )}
+            {isLogin && (
+              <div className='flex justify-end mt-2'>
+                <button
+                  type='button'
+                  onClick={onForgotPassword}
+                  className='text-sm text-indigo-400 hover:text-indigo-300 font-medium transition-colors'
+                >
+                  Forgot password?
+                </button>
               </div>
             )}
           </div>

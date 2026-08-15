@@ -1,9 +1,12 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 import sentry_sdk
 from loguru import logger
 from app.core.config import settings
+from app.core.limiter import limiter, rate_limit_exceeded_handler
 from app.api.v1.router import router
 from app.db.base import Base, engine
 
@@ -21,6 +24,10 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

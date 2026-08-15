@@ -15,7 +15,11 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         user_id = int(payload.get("sub"))
     except (JWTError, TypeError):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+    if payload.get("type") != "access":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
     user = user_repo.get_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if not user.is_verified:
+        raise HTTPException(status_code=403, detail="Verifica tu email antes de continuar")
     return user

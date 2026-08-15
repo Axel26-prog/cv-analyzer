@@ -11,6 +11,7 @@ class UserLogin(BaseModel):
 class UserOut(BaseModel):
     id: int
     email: str
+    is_verified: bool
 
     class Config:
         from_attributes = True
@@ -18,3 +19,13 @@ class UserOut(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
+
+class MessageOut(BaseModel):
+    detail: str

@@ -33,11 +33,15 @@ MOCK_ANALYSIS = {
     ]
 }
 
-def get_auth_token(client):
+def get_auth_token(client, db):
+    from app.repositories import user_repo
     client.post("/api/v1/auth/register", json={
         "email": "cvuser@example.com",
         "password": "testpassword123"
     })
+    user = user_repo.get_by_email(db, "cvuser@example.com")
+    if user and not user.is_verified:
+        user_repo.set_verified(db, user)
     res = client.post("/api/v1/auth/login", data={
         "username": "cvuser@example.com",
         "password": "testpassword123"
@@ -124,8 +128,8 @@ def test_analyze_endpoint_requires_auth(client):
     assert res.status_code == 401
 
 
-def test_analyze_endpoint_rejects_invalid_format(client):
-    token = get_auth_token(client)
+def test_analyze_endpoint_rejects_invalid_format(client, db):
+    token = get_auth_token(client, db)
     res = client.post(
         "/api/v1/cv/analyze",
         files={"file": ("cv.txt", b"fake content", "text/plain")},
@@ -135,8 +139,8 @@ def test_analyze_endpoint_rejects_invalid_format(client):
     assert res.status_code == 400
 
 
-def test_analyze_endpoint_success(client):
-    token = get_auth_token(client)
+def test_analyze_endpoint_success(client, db):
+    token = get_auth_token(client, db)
 
     with patch("app.api.v1.cv.extract_text", return_value="John Doe Software Engineer"), \
          patch("app.api.v1.cv.analyze_cv", return_value=MOCK_ANALYSIS):
@@ -161,8 +165,8 @@ def test_history_requires_auth(client):
     assert res.status_code == 401
 
 
-def test_history_returns_list(client):
-    token = get_auth_token(client)
+def test_history_returns_list(client, db):
+    token = get_auth_token(client, db)
     res = client.get(
         "/api/v1/cv/history",
         headers={"Authorization": f"Bearer {token}"}

@@ -25,7 +25,28 @@ export const login = async (email, password) => {
 
 export const logout = () => localStorage.removeItem('token')
 
+export const verifyEmail = (token) =>
+  api.get('/auth/verify-email', { params: { token } })
+
+export const requestPasswordReset = (email) =>
+  api.post('/auth/forgot-password', { email })
+
+export const resetPassword = (token, password) =>
+  api.post('/auth/reset-password', { token, password })
+
 export const getHistory = () => api.get('/cv/history')
+
+export const getApplications = (status) =>
+  api.get('/applications', { params: status ? { status } : {} })
+
+export const createApplication = (data) =>
+  api.post('/applications', data)
+
+export const updateApplication = (id, data) =>
+  api.patch(`/applications/${id}`, data)
+
+export const deleteApplication = (id) =>
+  api.delete(`/applications/${id}`)
 
 export async function analyzeCVStream (file, jobDescription, token, onProgress, onComplete, onError, timeoutMs = 60000) {
   const controller = new AbortController()

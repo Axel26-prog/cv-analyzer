@@ -127,7 +127,7 @@ Upload your CV (PDF or DOCX), optionally paste a job description, and get instan
 |----------------|-----------------------------------------------------|
 | Frontend       | React 18, Vite, Tailwind CSS, Axios, Recharts       |
 | Backend        | FastAPI, Python 3.11, SQLAlchemy 2.0                |
-| Auth           | JWT (python-jose), passlib + bcrypt                 |
+| Auth           | JWT (python-jose), passlib + bcrypt, email verification, rate limiting (slowapi) |
 | AI             | Azure OpenAI (gpt-4o) or OpenAI                     |
 | Database       | PostgreSQL 16                                       |
 | Cache          | Redis 7                                             |
@@ -185,6 +185,19 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cv_analyzer
 REDIS_URL=redis://localhost:6379
 SECRET_KEY=your_secret_key_here
 SENTRY_DSN=your_sentry_dsn        # optional
+
+# Auth (email verification + password recovery)
+FRONTEND_URL=http://localhost:5173
+PASSWORD_RESET_TOKEN_EXPIRE_MINUTES=60
+
+# Email transport — set RESEND_API_KEY (preferred) OR SMTP_* (fallback).
+# If neither is set, verification/reset links are logged instead of emailed (dev mode).
+MAIL_FROM=CV Analyzer <no-reply@cvanalyzer.com>
+RESEND_API_KEY=                  # optional
+SMTP_HOST=                       # optional (used if RESEND_API_KEY is empty)
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
 ```
 
 ```bash
@@ -289,6 +302,10 @@ push to main / feat/** / pull request
 | `REDIS_URL`     | Provided by Railway Redis        |
 | `SECRET_KEY`    | A random secret string           |
 | `SENTRY_DSN`    | Your Sentry DSN (optional)       |
+| `FRONTEND_URL`  | Public SPA URL (for email links) |
+| `MAIL_FROM`     | Sender address, e.g. `CV Analyzer <no-reply@cvanalyzer.com>` |
+| `RESEND_API_KEY` | Resend API key (optional — or use SMTP below) |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` | SMTP fallback (optional, used if `RESEND_API_KEY` is empty) |
 | `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint (optional) |
 | `AZURE_OPENAI_API_KEY` | Azure OpenAI API key (optional) |
 | `AZURE_OPENAI_DEPLOYMENT_NAME` | Azure deployment name (optional) |
@@ -316,6 +333,60 @@ For storing CV files in Azure Blob Storage, add these variables in Railway:
 | `AZURE_STORAGE_CONTAINER_NAME` | Container name (e.g., `cv-files`) |
 | `AZURE_STORAGE_BLOB_URL` | Blob URL prefix (e.g., `https://youraccount.blob.core.windows.net`) |
 
+### Auth & Email
+
+The backend enforces **email verification**, **password recovery**, and **registration abuse prevention** before the app can be used as a paid product.
+
+**Auth endpoints** (mounted under `/api/v1/auth`):
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/register` | Create an account (max 3 per IP per day). Sends a verification email. |
+| `GET`  | `/verify-email?token=xxx` | Confirm the email and activate the account. |
+| `POST` | `/login` | Obtain a JWT. Blocked until the email is verified. |
+| `POST` | `/forgot-password` | Email a 1-hour reset link (always returns 200 — no email enumeration). |
+| `POST` | `/reset-password` | Set a new password using a reset token. |
+
+Unverified users cannot log in or call any protected endpoint (`/cv/*`).
+
+**Email transport** — pick one in Railway env:
+
+| Variable | Description |
+|----------|-------------|
+| `MAIL_FROM` | Sender address, e.g. `CV Analyzer <no-reply@cvanalyzer.com>` |
+| `RESEND_API_KEY` | Resend API key (preferred). If set, `SMTP_*` is ignored. |
+| `SMTP_HOST` | SMTP server (fallback). Used only if `RESEND_API_KEY` is empty. |
+| `SMTP_PORT` | SMTP port (default `587`). |
+| `SMTP_USER` / `SMTP_PASSWORD` | SMTP credentials (optional). |
+| `FRONTEND_URL` | Public URL of the SPA (used to build verification/reset links). |
+| `PASSWORD_RESET_TOKEN_EXPIRE_MINUTES` | Reset-token lifetime (default `60`). |
+
+If no transport is configured, verification/reset links are written to the logs instead of emailed (handy for local dev).
+
+**Rate limiting** — `/register` is limited to **3 requests per IP per day** via [slowapi](https://slowapi.readthedocs.io/) backed by Redis, with an in-memory fallback if Redis is unreachable. `X-Forwarded-For` is trusted for the client IP (the app runs behind Azure Front Door / Vercel).
+
+**Abuse prevention** — Gmail/Googlemail dot-trick and `+` aliases are normalized before storing (e.g. `name.last+tag@gmail.com` → `namelast@gmail.com`) and the normalized email is `UNIQUE`, so alias-based duplicate accounts are rejected. Registrations from disposable/temporary email domains are blocked via a self-maintained list in `backend/app/services/disposable_domains.py`.
+
+#### Existing databases: schema update
+
+The app creates missing tables on startup via `Base.metadata.create_all`, but it does **not** add columns to existing tables. If you already have a `users` table from a previous deploy, run this once:
+
+```sql
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS verification_token VARCHAR;
+CREATE UNIQUE INDEX IF NOT EXISTS ix_users_verification_token ON users (verification_token);
+```
+
+Existing users created before this change will have `is_verified = FALSE` — they must verify their email before logging in again.
+
+#### Frontend pages required
+
+The verification and reset emails link into the SPA. The frontend should add:
+
+- `/verify-email?token=xxx` — call `GET /api/v1/auth/verify-email?token=xxx` and show success/failure.
+- `/reset-password?token=xxx` — collect a new password and `POST /api/v1/auth/reset-password`.
+
 ---
 
 ## Project Structure
@@ -326,7 +397,7 @@ cv-analyzer/
 │   ├── app/
 │   │   ├── main.py                 # FastAPI entry point
 │   │   ├── api/v1/                 # Versioned API routes
-│   │   ├── core/                   # Config, security, JWT
+│   │   ├── core/                   # Config, security, JWT, rate limiter
 │   │   ├── db/                     # Database session
 │   │   ├── models/                 # SQLAlchemy models
 │   │   ├── repositories/           # Data access layer
@@ -341,9 +412,11 @@ cv-analyzer/
 │   │       │   ├── prompt_builder.py
 │   │       │   └── exceptions.py
 │   │       ├── prompts/            # Prompt templates (.txt)
-│   │       ├── auth_service.py
+│   │       ├── auth_service.py     # Register, login, verify-email, password reset
 │   │       ├── cv_service.py       # CV extraction + caching
 │   │       ├── cache_service.py
+│   │       ├── email_service.py    # Resend / SMTP (verification & reset emails)
+│   │       ├── disposable_domains.py # Disposable-email domain blocker
 │   │       └── storage_service.py   # Azure Blob Storage integration
 │   ├── tests/                      # pytest (88% coverage)
 │   ├── Dockerfile

@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from app.core.limiter import limiter
 from app.main import app
 from app.db.base import Base
 from app.db.session import get_db
@@ -12,7 +13,14 @@ engine = create_engine(SQLALCHEMY_TEST_URL, connect_args={"check_same_thread": F
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 @pytest.fixture(scope="session", autouse=True)
+def _disable_rate_limits():
+    limiter.enabled = False
+    yield
+    limiter.enabled = True
+
+@pytest.fixture(scope="session", autouse=True)
 def setup_db():
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
